@@ -1,0 +1,223 @@
+C51 COMPILER V9.00   TEST                                                                  11/02/2021 15:46:43 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE TEST
+OBJECT MODULE PLACED IN test.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE test.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include <STC15.H>
+   2          #include <motor.h>
+   3          #include <uart.h>
+   4          #include <delay.h>
+   5          #include <radar.h>
+   6          #include <math.h>
+   7          unsigned char bTemp;//串口接收到的数据
+   8          bit rx_flag=0;
+   9          int dis = 0;
+  10          int dis2 = 0;
+  11          int status = 0;
+  12          sbit alarm = P0^0;
+  13          unsigned char speed = 70;
+  14          //int counter = 0; 
+  15          unsigned char dis_buf[6];
+  16          
+  17          
+  18          void int2str(int distance, unsigned char *dis)
+  19          {
+  20   1              if(distance > 0)
+  21   1              {
+  22   2                      char num_10k = distance/10000+48; 
+  23   2                      char num_1k  = distance/1000%10+48;
+  24   2                      char num_100 = distance/100%10+48;
+  25   2                      char num_10  = distance/10%10+48;
+  26   2                      char num_1   = distance%10+48;
+  27   2              
+  28   2                      *(dis)   = num_10k;
+  29   2                      *(dis+1) = num_1k;
+  30   2                      *(dis+2) = num_100;
+  31   2                      *(dis+3) = num_10;
+  32   2                      *(dis+4) = num_1;
+  33   2                      *(dis+5) = '\0';        
+  34   2              }
+  35   1              else
+  36   1              {
+  37   2                      int i = 0;
+  38   2                      for(i; i<5; i++)
+  39   2                      {
+  40   3                              *(dis+i) = '0';
+  41   3                      }
+  42   2                      *(dis+5) = '\0';
+  43   2              }
+  44   1      }
+  45          
+  46          
+  47          
+  48          void main()
+  49          {
+  50   1              // 设置P2.0-P2.7端口为准双向口输出
+  51   1              P2M0 = 0x00;
+  52   1              P2M1 = 0x00;
+  53   1              motorInit();
+  54   1              uartInit();
+  55   1              radarInit();
+C51 COMPILER V9.00   TEST                                                                  11/02/2021 15:46:43 PAGE 2   
+
+  56   1              EA =1;
+  57   1              alarm = 0;
+  58   1      
+  59   1              while(1)
+  60   1              {
+  61   2      
+  62   2      
+  63   2                      dis = radarGetDistance();
+  64   2                      dis = dis*17;
+  65   2                      dis = dis/1000;
+  66   2                      Delay_Nms(200);
+  67   2                      dis2 = radarGetDistance();
+  68   2                      dis2 = dis2*17;
+  69   2                      dis2 = dis2/1000;
+  70   2                      if(status == 1){
+  71   3                              if(10 < dis && dis < 20)
+  72   3                              {               
+  73   4                                      if(10 < dis2 && dis2 < 20)
+  74   4                                      {
+  75   5                                              int2str(dis, dis_buf);
+  76   5                                              uartStrTx(dis_buf);
+  77   5                                              uartStrTx(" cm\r\n");
+  78   5                                              uartStrTx(" stop\r\n");
+  79   5                                              speed = 70;
+  80   5                                              speed = 70;
+  81   5                                              motorSetState(0x00, speed);
+  82   5                                              status = 0;
+  83   5                                              alarm = 1;
+  84   5              
+  85   5                                      }
+  86   4                              }
+  87   3                      }
+  88   2                      //alarm = 0;    
+  89   2                      /*int2str(dis, dis_buf);
+  90   2                      uartStrTx("Dis: ");
+  91   2                      uartStrTx(dis_buf);
+  92   2                      uartStrTx(" cm\r\n");*/
+  93   2      
+  94   2                      
+  95   2                      if(rx_flag)
+  96   2                      {
+  97   3                              rx_flag = 0;
+  98   3                              
+  99   3                              switch(bTemp){
+ 100   4                              case'q'://停止
+ 101   4                                      uartStrTx("State:stop\r\n");
+ 102   4                                      speed = 50;
+ 103   4                                      motorSetState(0x00, speed);
+ 104   4                                      status = 0;
+ 105   4                                      alarm = 0;
+ 106   4                              break;
+ 107   4      
+ 108   4                              case'w'://前进
+ 109   4                                      uartStrTx("State:forward\r\n");
+ 110   4                                      speed = 50;
+ 111   4                                      motorSetState(0x01, speed);
+ 112   4                                      status = 1;
+ 113   4                                      alarm = 0;                                
+ 114   4                              break;
+ 115   4      
+ 116   4                              case's'://后退
+ 117   4                                      uartStrTx("State:backward\r\n");
+C51 COMPILER V9.00   TEST                                                                  11/02/2021 15:46:43 PAGE 3   
+
+ 118   4                                      speed = 50;
+ 119   4                                      motorSetState(0x02, speed);
+ 120   4                                      status = 2;
+ 121   4                                      alarm = 0;
+ 122   4                              break;
+ 123   4      
+ 124   4                              case'a'://左转
+ 125   4                                      uartStrTx("State:left\r\n");
+ 126   4                                      speed = 50;
+ 127   4                                      motorSetState(0x03, speed);
+ 128   4                                      status = 3;
+ 129   4                                      alarm = 0;              
+ 130   4                              break;
+ 131   4      
+ 132   4                              case'd'://右转
+ 133   4                                      uartStrTx("State:right\r\n");
+ 134   4                                      speed = 50;
+ 135   4                                      motorSetState(0x04, speed);
+ 136   4                                      status = 4;
+ 137   4                                      alarm = 0;
+ 138   4                              break;
+ 139   4                              
+ 140   4                              case'z':
+ 141   4                                      uartStrTx("State:accelerate\r\n");
+ 142   4                                      speed++;
+ 143   4                                      motorSetLeftSpeed(speed);
+ 144   4                                      motorSetRightSpeed(speed);
+ 145   4                                      uartCharTx(speed);
+ 146   4                                      uartCharTx(speed);
+ 147   4                                      uartStrTx("\r\n");
+ 148   4                              break;
+ 149   4      
+ 150   4                              case'x':
+ 151   4                                      //uartStrTx("State:decelerate\r\n");
+ 152   4                                      speed--;
+ 153   4                                      motorSetLeftSpeed(speed);
+ 154   4                                      motorSetRightSpeed(speed);
+ 155   4                                      uartCharTx(speed);
+ 156   4                                      uartCharTx(speed);
+ 157   4                                      //uartStrTx("\r\n");
+ 158   4                              break;
+ 159   4                                      
+ 160   4                                      
+ 161   4                              
+ 162   4                              case'm'://发送距离信息
+ 163   4                                      int2str(dis, dis_buf);
+ 164   4                                      uartStrTx("Dis: ");
+ 165   4                                      uartStrTx(dis_buf);
+ 166   4                                      uartStrTx(" cm\r\n");
+ 167   4                              break;
+ 168   4                              default:break;
+ 169   4                              }
+ 170   3                      }
+ 171   2                      //else
+ 172   2                      //{
+ 173   2                      //      uartStrTx("test\n");
+ 174   2                      //}     
+ 175   2      
+ 176   2              }
+ 177   1      }
+ 178          
+ 179          //P40 中断源的中断号
+C51 COMPILER V9.00   TEST                                                                  11/02/2021 15:46:43 PAGE 4   
+
+ 180          void UART1_ISR(void) interrupt 4 
+ 181          {
+ 182   1              
+ 183   1              /*串口接收*/
+ 184   1              if(RI)
+ 185   1              {
+ 186   2                      RI=0;//清除中断标志
+ 187   2                      bTemp=SBUF;//读出串口数据
+ 188   2                      rx_flag=1;
+ 189   2          }
+ 190   1              if(TI)
+ 191   1              {
+ 192   2                      TI=0;
+ 193   2          }
+ 194   1      }                                                                                         
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    750    ----
+   CONSTANT SIZE    =    115    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     14      10
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

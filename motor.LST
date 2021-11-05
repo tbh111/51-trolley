@@ -1,0 +1,115 @@
+C51 COMPILER V9.00   MOTOR                                                                 11/02/2021 15:09:56 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE MOTOR
+OBJECT MODULE PLACED IN motor.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE motor.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "motor.h"
+   2          
+   3          void motorInit(void)
+   4          {
+   5   1              P_SW2 |= BIT7; // 使能访问XSFR
+   6   1              PWMCKS = 0x00; // 配置PWM的输出初始电平为低电平
+   7   1              PWMCFG = 0x00; // 选择PWM时钟 
+   8   1              PWMC = CYCLE;  // 设置PWM周期
+   9   1      
+  10   1              ENA = 0;           // 使能电机
+  11   1              ENB = 0;
+  12   1      
+  13   1              PWM5CR = 0;
+  14   1              PWM5T1 = 0;                                // 设置PWM5第一次反转的PWM计数
+  15   1              PWM5T2 = CYCLE*50/100;     // 设置PWM5第二次反转的PWM计数
+  16   1      
+  17   1              PWM4CR = 0;
+  18   1              PWM4T1 = 0;
+  19   1              PWM4T2 = CYCLE*50/100;
+  20   1      
+  21   1              PWMCR = BIT3+BIT2;                 // PWM输出使能
+  22   1              PWMCR |= ENPWM;
+  23   1              P_SW2 &= ~BIT7;
+  24   1      
+  25   1              motorSetState(0x00,0);
+  26   1              //motorSetLeftSpeed(1);
+  27   1              //motorSetRightSpeed(1);
+  28   1      }
+  29          
+  30          void motorSetLeftSpeed(unsigned char wide)
+  31          {
+  32   1              if(wide)
+  33   1              {
+  34   2                      P_SW2 |= BIT7;
+  35   2                      PWM4T2 = (unsigned int)(CYCLE/(100.0/wide));
+  36   2                      P_SW2 &= ~BIT7;
+  37   2                      PWMCR |= BIT2;
+  38   2              }
+  39   1              else
+  40   1              {
+  41   2                      PWMCR &= ~BIT2;
+  42   2                      ENA = 1;
+  43   2              }
+  44   1      }
+  45          
+  46          void motorSetRightSpeed(unsigned char wide)
+  47          {               
+  48   1              if(wide)
+  49   1              {
+  50   2                      P_SW2 |= BIT7;
+  51   2                      PWM5T2 = (unsigned int)(CYCLE/(100.0/wide));
+  52   2                      P_SW2 &= ~BIT7;
+  53   2                      PWMCR |= BIT3;
+  54   2              }
+  55   1              else
+C51 COMPILER V9.00   MOTOR                                                                 11/02/2021 15:09:56 PAGE 2   
+
+  56   1              {
+  57   2                      PWMCR &= ~BIT3;
+  58   2                      ENB = 1;
+  59   2              }
+  60   1      }
+  61          
+  62          void motorSetState(unsigned char state, unsigned char speed)
+  63          {
+  64   1              motorSetLeftSpeed(speed);
+  65   1              motorSetRightSpeed(speed);
+  66   1              switch(state)
+  67   1              {
+  68   2                      case 0x00:
+  69   2                              MOTOR_STOP();
+  70   2                      break;
+  71   2      
+  72   2                      case 0x01:
+  73   2                              MOTOR_FORWARD();
+  74   2                      break;
+  75   2      
+  76   2                      case 0x02:
+  77   2                              MOTOR_BACKWARD();
+  78   2                      break;
+  79   2      
+  80   2                      case 0x03:
+  81   2                              MOTOR_TURNLEFT();
+  82   2                      break;
+  83   2      
+  84   2                      case 0x04:
+  85   2                              MOTOR_TURNRIGHT();
+  86   2      
+  87   2                      break;
+  88   2                      default: break; 
+  89   2              }
+  90   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    294    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

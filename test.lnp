@@ -1,0 +1,7 @@
+"test.obj",
+"motor.obj",
+"uart.obj",
+"radar.obj",
+"delay.obj" 
+TO "test" 
+RAMSIZE(256) 
